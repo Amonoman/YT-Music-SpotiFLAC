@@ -1,0 +1,45 @@
+name: Build & Zip Extension
+
+on:
+  workflow_dispatch:   # <-- Nur manuell starten
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # <-- erlaubt Commit/Push ins Repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Create ZIP
+        run: |
+          cd dist
+          zip -r ../ytmusic-extension.spotiflac-ext ./*
+          cd ..
+
+      - name: Move ZIP to repo root
+        run: mv ytmusic-extension.spotiflac-ext ./ytmusic-extension.spotiflac-ext
+
+      - name: Commit ZIP to repository root
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ytmusic-extension.spotiflac-ext
+          git commit -m "Automated build: add latest extension ZIP"
+          git push
