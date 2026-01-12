@@ -27,24 +27,27 @@ jobs:
       - name: Build extension
         run: npm run build
 
-      - name: Create ZIP
+      - name: Create ZIP from dist/
         run: |
           cd dist
           zip -r ../ytmusic-extension.spotiflac-ext ./*
           cd ..
 
-        - name: Move ZIP to repo root (only if needed)
-  run: |
-    if [ -f dist/ytmusic-extension.spotiflac-ext ]; then
-      mv dist/ytmusic-extension.spotiflac-ext ./ytmusic-extension.spotiflac-ext
-    else
-      echo "ZIP already in root, skipping move."
-    fi
+      - name: Move ZIP to repo root (safe)
+        run: |
+          if [ -f dist/ytmusic-extension.spotiflac-ext ]; then
+            mv dist/ytmusic-extension.spotiflac-ext ./ytmusic-extension.spotiflac-ext
+          elif [ -f ytmusic-extension.spotiflac-ext ]; then
+            echo "ZIP already in repo root, skipping move."
+          else
+            echo "ERROR: ZIP not found."
+            exit 1
+          fi
 
       - name: Commit ZIP to repository root
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add ytmusic-extension.spotiflac-ext
-          git commit -m "Automated build: add latest extension ZIP"
+          git commit -m "Automated build: add latest extension ZIP" || echo "No changes to commit."
           git push
