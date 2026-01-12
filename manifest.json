@@ -1,0 +1,53 @@
+{
+  "name": "yt_music",
+  "displayName": "YT Music",
+  "version": "0.1.0",
+  "author": "Amonoman",
+  "description": "YouTube Music metadata and download provider.",
+  "type": ["metadata_provider", "download_provider"],
+
+  "permissions": {
+    "network": [
+      "https://youtubei.googleapis.com/*",
+      "https://music.youtube.com/*",
+      "https://www.youtube.com/*"
+    ],
+    "storage": true,
+    "file": true
+  },
+
+  "skipMetadataEnrichment": true,
+
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Search YouTube Music...",
+    "thumbnailRatio": "square"
+  },
+
+  "trackMatching": {
+    "customMatching": true,
+    "strategy": "custom",
+    "durationTolerance": 2
+  },
+
+  "qualityOptions": [
+    {
+      "id": "AAC_256",
+      "label": "AAC 256kbps (Max YT Music)",
+      "description": "Highest available YouTube Music quality",
+      "default": true
+    },
+    {
+      "id": "OPUS_160",
+      "label": "Opus 160kbps",
+      "description": "Opus medium quality"
+    },
+    {
+      "id": "AAC_128",
+      "label": "AAC 128kbps",
+      "description": "AAC lower quality"
+    }
+  ],
+
+  "thumbnailRatio": "square"
+}

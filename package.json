@@ -1,0 +1,14 @@
+{
+  "name": "ytmusic-extension",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "youtubei.js": "^9.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2",
+    "typescript": "^5.0.0"
+  }
+}
