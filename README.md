@@ -1,5 +1,7 @@
 # SpotiFLAC‑YT‑Music‑Extension
 
+<img src="icon.png" width="256" />
+
 ##### A high‑performance [SpotiFLAC-Mobile](https://github.com/zarzet/SpotiFLAC-Mobile) extension that integrates YouTube Music as a source for search, metadata, and high‑quality audio downloads.
 
 ## Features
