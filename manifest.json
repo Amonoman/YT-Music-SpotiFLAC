@@ -1,0 +1,21 @@
+{
+  "name": "ytmusic-spotiflac",
+  "displayName": "YouTube Music",
+  "version": "1.2.1",
+  "description": "YouTube Music Metadata & Search Provider for SpotiFLAC.",
+  "author": "Amonoman",
+  "type": ["metadata_provider"],
+  "main": "index.js",
+  "icon": "icon.jpg",
+  "capabilities": ["search", "metadata"],
+  "permissions": {
+    "network": ["music.youtube.com", "*.youtube.com"],
+    "storage": true,
+    "file": true
+  },
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Search YouTube Music...",
+    "thumbnailRatio": "square"
+  }
+}
