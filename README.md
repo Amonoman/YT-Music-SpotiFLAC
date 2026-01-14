@@ -22,22 +22,7 @@ A compact, high‑performance SpotiFLAC extension that integrates YouTube Music 
 
 ---
 
-## Development
-- Install dependencies
-`bash
-npm install
-`
-- Build
-`bash
-npm run build
-`
-- Build output
-  - The build produces index.js and main.js at the package root and the src/ modules used by the extension.  
-  - Package the extension as YT-Music-SpotiFLAC.spotiflac-ext (ZIP) including index.js, main.js, manifest.json, icons/, and src/.
-
----
-
-## License
+# License
 This project is licensed under the GNU General Public License v3.0 (GPL‑3.0). You may use, modify, and distribute this software under the GPL‑3.0 terms. Any derivative works that include this code must also be released under GPL‑3.0 and provide corresponding source code.
 
 For the full license text consult the official GNU documentation.
