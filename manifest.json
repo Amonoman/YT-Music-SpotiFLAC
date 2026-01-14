@@ -5,6 +5,8 @@
   "author": "Amonoman",
   "description": "YouTube Music metadata and download provider.",
   "type": ["metadata_provider", "download_provider"],
+  "main": "index.js",
+  "icon": "icon.jpg",
 
   "permissions": {
     "network": [
