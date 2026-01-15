@@ -286,6 +286,47 @@ function parseItemExtended(info) {
       L("debug", "parseItemExtended: no artist found for", title);
     }
     
+    // Try to extract album name from flexColumns or subtitle
+    // YouTube Music format is usually: "Artist • Album • Duration" or "Artist • Single • Year"
+    var album = "";
+    if (c.flexColumns && Array.isArray(c.flexColumns) && c.flexColumns.length > 1) {
+      var fc2 = c.flexColumns[1];
+      if (fc2 && fc2.musicResponsiveListItemFlexColumnRenderer) {
+        var fcr2 = fc2.musicResponsiveListItemFlexColumnRenderer;
+        if (fcr2.text && fcr2.text.runs) {
+          // Look for album - it's usually after the artist, separated by bullet
+          // Format: "Artist • Album • Duration" - album is the part after first bullet that has a browseEndpoint to an album
+          for (var ri = 0; ri < fcr2.text.runs.length; ri++) {
+            var run = fcr2.text.runs[ri];
+            if (run && run.text && run.navigationEndpoint && run.navigationEndpoint.browseEndpoint) {
+              var browseId = run.navigationEndpoint.browseEndpoint.browseId || "";
+              // Album browseIds start with "MPREb_" 
+              if (browseId.startsWith("MPREb_")) {
+                album = run.text.trim();
+                L("debug", "parseItemExtended: found album from flexColumns", album);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Also try subtitle for album
+    if (!album && c.subtitle && c.subtitle.runs) {
+      for (var si = 0; si < c.subtitle.runs.length; si++) {
+        var srun = c.subtitle.runs[si];
+        if (srun && srun.text && srun.navigationEndpoint && srun.navigationEndpoint.browseEndpoint) {
+          var sBrowseId = srun.navigationEndpoint.browseEndpoint.browseId || "";
+          if (sBrowseId.startsWith("MPREb_")) {
+            album = srun.text.trim();
+            L("debug", "parseItemExtended: found album from subtitle", album);
+            break;
+          }
+        }
+      }
+    }
+    
     // Extract videoId from various locations
     var videoId = null;
     if (c.playlistItemData && c.playlistItemData.videoId) videoId = c.playlistItemData.videoId;
@@ -317,6 +358,53 @@ function parseItemExtended(info) {
         }
       }
     }
+    // Try to get duration from fixedColumns (YouTube Music search results often have duration here)
+    if (!durationText && c.fixedColumns && Array.isArray(c.fixedColumns)) {
+      for (var dfi = 0; dfi < c.fixedColumns.length; dfi++) {
+        var dfc = c.fixedColumns[dfi];
+        if (dfc && dfc.musicResponsiveListItemFixedColumnRenderer) {
+          var dfcr = dfc.musicResponsiveListItemFixedColumnRenderer;
+          if (dfcr.text && dfcr.text.runs && dfcr.text.runs[0] && dfcr.text.runs[0].text) {
+            var possibleDuration = dfcr.text.runs[0].text.trim();
+            // Check if it looks like a duration (e.g., "3:45", "1:02:30")
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(possibleDuration)) {
+              durationText = possibleDuration;
+              L("debug", "parseItemExtended: found duration from fixedColumns", durationText);
+              break;
+            }
+          }
+          // Also check simpleText
+          if (!durationText && dfcr.text && dfcr.text.simpleText) {
+            var possibleDuration2 = dfcr.text.simpleText.trim();
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(possibleDuration2)) {
+              durationText = possibleDuration2;
+              L("debug", "parseItemExtended: found duration from fixedColumns simpleText", durationText);
+              break;
+            }
+          }
+        }
+      }
+    }
+    // Also try flexColumns for duration (sometimes embedded in subtitle after bullet)
+    if (!durationText && c.flexColumns && Array.isArray(c.flexColumns) && c.flexColumns.length > 1) {
+      var fc3 = c.flexColumns[1];
+      if (fc3 && fc3.musicResponsiveListItemFlexColumnRenderer) {
+        var fcr3 = fc3.musicResponsiveListItemFlexColumnRenderer;
+        if (fcr3.text && fcr3.text.runs) {
+          for (var dri = 0; dri < fcr3.text.runs.length; dri++) {
+            var drun = fcr3.text.runs[dri];
+            if (drun && drun.text) {
+              var dtxt = drun.text.trim();
+              if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(dtxt)) {
+                durationText = dtxt;
+                L("debug", "parseItemExtended: found duration from flexColumns", durationText);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
     var duration = parseDurationText(durationText);
     var thumbRaw = null;
     thumbRaw = thumbRaw || pickLastThumbnailUrl((c.thumbnail && c.thumbnail.musicThumbnailRenderer && c.thumbnail.musicThumbnailRenderer.thumbnail && c.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails) || null);
@@ -340,7 +428,7 @@ function parseItemExtended(info) {
       id: String(videoId),
       title: String(title),
       artist: String(artist || ""),
-      album: "",
+      album: String(album || ""),
       duration: Number(duration || 0),
       thumbnail: thumb,
       source: "youtube",
