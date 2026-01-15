@@ -3,7 +3,7 @@
   "displayName": "YouTube Music",
   "version": "1.4.2",
   "description": "YouTube Music Search Provider for SpotiFLAC. Search tracks, albums, and playlists on YouTube Music. Uses Odesli for ISRC lookup.",
-  "author": "Amonoman",
+  "author": "Amonoman (Credit: Zarz)",
   "type": ["metadata_provider"],
   "icon": "icon.jpg",
   "minAppVersion": "3.0.1",
