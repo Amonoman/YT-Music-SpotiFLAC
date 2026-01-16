@@ -1574,6 +1574,8 @@ function getArtist(artistId) {
     // Extract artist info from header
     var artistName = "";
     var artistImage = null;
+    var headerImage = null;
+    var monthlyListeners = null;
     
     if (data.header) {
       var header = data.header.musicImmersiveHeaderRenderer || data.header.musicVisualHeaderRenderer || data.header.musicDetailHeaderRenderer;
@@ -1590,49 +1592,176 @@ function getArtist(artistId) {
           var thumbUrl2 = pickLastThumbnailUrl(header.foregroundThumbnail.musicThumbnailRenderer.thumbnail.thumbnails);
           artistImage = makeSquareThumb(thumbUrl2);
         }
+        // Get subscriptionButton for subscriber count (similar to monthly listeners)
+        if (header.subscriptionButton && header.subscriptionButton.subscribeButtonRenderer) {
+          var subButton = header.subscriptionButton.subscribeButtonRenderer;
+          if (subButton.subscriberCountText && subButton.subscriberCountText.runs) {
+            var subText = subButton.subscriberCountText.runs.map(function(r){ return r.text; }).join("");
+            // Parse "1.23M subscribers" -> 1230000
+            var subMatch = subText.match(/^([\d.]+)([KMB])?/i);
+            if (subMatch) {
+              var num = parseFloat(subMatch[1]);
+              var mult = subMatch[2] ? subMatch[2].toUpperCase() : "";
+              if (mult === "K") num *= 1000;
+              else if (mult === "M") num *= 1000000;
+              else if (mult === "B") num *= 1000000000;
+              monthlyListeners = Math.round(num);
+            }
+          }
+        }
       }
     }
     
-    // Collect albums from content
+    // Collect top tracks and albums from content
+    var topTracks = [];
     var albums = [];
+    
     if (data.contents) {
-      var candidates = [];
-      collectItemsFromNode(data.contents, candidates, 0);
+      // Look for sectionListRenderer which contains all sections
+      var sectionList = findSectionList(data.contents);
+      if (sectionList && sectionList.contents) {
+        for (var si = 0; si < sectionList.contents.length; si++) {
+          var section = sectionList.contents[si];
+          
+          // Check for musicShelfRenderer (contains songs/top tracks)
+          if (section.musicShelfRenderer) {
+            var shelf = section.musicShelfRenderer;
+            var shelfTitle = "";
+            if (shelf.title && shelf.title.runs) {
+              shelfTitle = shelf.title.runs.map(function(r){ return r.text; }).join("").toLowerCase();
+            }
+            
+            // Songs/Top Songs section
+            if (shelfTitle.indexOf("song") !== -1 || shelfTitle.indexOf("top") !== -1 || shelfTitle.indexOf("popular") !== -1) {
+              L("info", "getArtist found songs section:", shelfTitle);
+              if (shelf.contents) {
+                for (var ti = 0; ti < shelf.contents.length && topTracks.length < 10; ti++) {
+                  var trackNode = shelf.contents[ti];
+                  var parsed = parseItemExtended(trackNode);
+                  if (parsed && parsed.id) {
+                    var sanitized = sanitizeTrackBeforeReturn(parsed);
+                    if (sanitized) {
+                      // Add artist name if missing
+                      if (!sanitized.artists) {
+                        sanitized.artists = artistName;
+                      }
+                      topTracks.push(sanitized);
+                    }
+                  }
+                }
+              }
+              L("info", "getArtist found top tracks", topTracks.length);
+            }
+          }
+          
+          // Check for musicCarouselShelfRenderer (contains albums/singles)
+          if (section.musicCarouselShelfRenderer) {
+            var carousel = section.musicCarouselShelfRenderer;
+            if (carousel.contents) {
+              for (var ci = 0; ci < carousel.contents.length; ci++) {
+                var node = carousel.contents[ci];
+                var parsed = parseCollectionItem(node);
+                if (parsed && (parsed.item_type === "album" || parsed.item_type === "playlist")) {
+                  var sanitized = sanitizeCollectionBeforeReturn(parsed);
+                  if (sanitized) {
+                    albums.push({
+                      id: sanitized.id,
+                      name: sanitized.name,
+                      artists: sanitized.artists || artistName,
+                      cover_url: sanitized.cover_url,
+                      release_date: sanitized.release_date || "",
+                      total_tracks: 0,
+                      album_type: sanitized.album_type || "album",
+                      provider_id: "ytmusic-spotiflac"
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       
-      for (var i = 0; i < candidates.length; i++) {
-        var node = candidates[i];
-        var parsed = parseCollectionItem(node);
-        if (parsed && (parsed.item_type === "album" || parsed.item_type === "playlist")) {
-          var sanitized = sanitizeCollectionBeforeReturn(parsed);
-          if (sanitized) {
-            albums.push({
-              id: sanitized.id,
-              name: sanitized.name,
-              artists: sanitized.artists || artistName,
-              cover_url: sanitized.cover_url,
-              release_date: sanitized.release_date || "",
-              total_tracks: 0,
-              album_type: sanitized.album_type || "album",
-              provider_id: "ytmusic-spotiflac"
-            });
+      // Fallback: if no albums found via carousels, use old method
+      if (albums.length === 0) {
+        var candidates = [];
+        collectItemsFromNode(data.contents, candidates, 0);
+        
+        for (var i = 0; i < candidates.length; i++) {
+          var node = candidates[i];
+          var parsed = parseCollectionItem(node);
+          if (parsed && (parsed.item_type === "album" || parsed.item_type === "playlist")) {
+            var sanitized = sanitizeCollectionBeforeReturn(parsed);
+            if (sanitized) {
+              albums.push({
+                id: sanitized.id,
+                name: sanitized.name,
+                artists: sanitized.artists || artistName,
+                cover_url: sanitized.cover_url,
+                release_date: sanitized.release_date || "",
+                total_tracks: 0,
+                album_type: sanitized.album_type || "album",
+                provider_id: "ytmusic-spotiflac"
+              });
+            }
           }
         }
       }
     }
     
     L("info", "getArtist found albums", albums.length);
+    L("info", "getArtist found top_tracks", topTracks.length);
     
     return {
       id: artistId,
       name: artistName,
       image_url: artistImage,
+      header_image: headerImage,
+      listeners: monthlyListeners,
       albums: albums,
+      top_tracks: topTracks,
       provider_id: "ytmusic-spotiflac"
     };
   } catch (e) {
     L("error", "getArtist error", String(e));
     return null;
   }
+}
+
+// Helper function to find sectionListRenderer in various locations
+function findSectionList(contents) {
+  if (!contents) return null;
+  
+  // Direct sectionListRenderer
+  if (contents.sectionListRenderer) {
+    return contents.sectionListRenderer;
+  }
+  
+  // Inside singleColumnBrowseResultsRenderer
+  if (contents.singleColumnBrowseResultsRenderer) {
+    var tabs = contents.singleColumnBrowseResultsRenderer.tabs;
+    if (tabs && tabs[0] && tabs[0].tabRenderer && tabs[0].tabRenderer.content) {
+      if (tabs[0].tabRenderer.content.sectionListRenderer) {
+        return tabs[0].tabRenderer.content.sectionListRenderer;
+      }
+    }
+  }
+  
+  // Inside twoColumnBrowseResultsRenderer
+  if (contents.twoColumnBrowseResultsRenderer) {
+    var secondaryContents = contents.twoColumnBrowseResultsRenderer.secondaryContents;
+    if (secondaryContents && secondaryContents.sectionListRenderer) {
+      return secondaryContents.sectionListRenderer;
+    }
+    var tabs = contents.twoColumnBrowseResultsRenderer.tabs;
+    if (tabs && tabs[0] && tabs[0].tabRenderer && tabs[0].tabRenderer.content) {
+      if (tabs[0].tabRenderer.content.sectionListRenderer) {
+        return tabs[0].tabRenderer.content.sectionListRenderer;
+      }
+    }
+  }
+  
+  return null;
 }
 
 // Enrich track with ISRC and external service links via Odesli (song.link) API
