@@ -1,16 +1,19 @@
 {
   "name": "ytmusic-spotiflac",
   "displayName": "YouTube Music",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "description": "YouTube Music Search Provider for SpotiFLAC. Search tracks, albums, and playlists on YouTube Music. Uses Odesli for ISRC lookup.",
-  "author": "Amonoman (Credit: Zarz)",
+  "author": "Amonoman and Zarz",
   "type": ["metadata_provider"],
   "icon": "icon.jpg",
-  "minAppVersion": "3.0.1",
+  "minAppVersion": "3.2.0",
   "permissions": {
-    "network": ["music.youtube.com", "*.youtube.com", "www.youtube.com", "i.ytimg.com", "api.song.link", "odesli.io"],
+    "network": ["music.youtube.com", "*.youtube.com", "www.youtube.com", "i.ytimg.com", "api.song.link", "odesli.io", "api.deezer.com"],
     "storage": true,
     "file": false
+  },
+  "capabilities": {
+    "homeFeed": true
   },
   "searchBehavior": {
     "enabled": true,
