@@ -1,8 +1,8 @@
 {
   "name": "ytmusic-spotiflac",
   "displayName": "YouTube Music",
-  "version": "1.6.1",
-  "description": "YouTube Music Search Provider for SpotiFLAC. Search tracks, albums, and playlists on YouTube Music. Uses Odesli for ISRC lookup.",
+  "version": "1.7.0",
+  "description": "YouTube Music Search Provider for SpotiFLAC. Search tracks, albums, and playlists on YouTube Music. Uses Odesli for ISRC lookup. Supports search filters.",
   "author": "Amonoman and Zarz",
   "type": ["metadata_provider"],
   "icon": "icon.jpg",
@@ -18,7 +18,13 @@
   "searchBehavior": {
     "enabled": true,
     "placeholder": "Search YouTube Music...",
-    "thumbnailRatio": "square"
+    "thumbnailRatio": "square",
+    "filters": [
+      { "id": "tracks", "label": "Songs", "icon": "music" },
+      { "id": "albums", "label": "Albums", "icon": "album" },
+      { "id": "artists", "label": "Artists", "icon": "artist" },
+      { "id": "playlists", "label": "Playlists", "icon": "playlist" }
+    ]
   },
   "urlHandler": {
     "enabled": true,
