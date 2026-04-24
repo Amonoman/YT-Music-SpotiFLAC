@@ -1,7 +1,7 @@
 # YT‑Music‑SpotiFLAC
 
 <p align="center">
-  <img src="icon.svg" width="192" />
+  <img src="icon.svg" width="192" style="border-radius: 50%;" />
 </p>
 
 A compact, high‑performance [SpotiFLAC](https://github.com/zarzet/SpotiFLAC-Mobile) extension that integrates YouTube Music as a metadata and search source.  
